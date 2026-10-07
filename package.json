@@ -1,9 +1,11 @@
 {
   "name": "dsh-vesna-theme",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "薇斯纳主题：青蓝、奶白、珊瑚粉与深海军蓝的明暗配色",
   "type": "module",
   "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/Mahiru0427/dsh-vesna-theme.git" },
+  "homepage": "https://github.com/Mahiru0427/dsh-vesna-theme#readme",
   "main": "lib/index.js",
   "exports": { ".": "./lib/index.js", "./client": "./lib/client.js", "./package.json": "./package.json" },
   "files": ["lib", "src", "scripts", "tests", "assets", "cordis.patch.yml", "README.md", "LICENSE"],
