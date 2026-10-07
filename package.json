@@ -1,0 +1,18 @@
+{
+  "name": "dsh-vesna-theme",
+  "version": "0.2.0",
+  "description": "薇斯纳主题：青蓝、奶白、珊瑚粉与深海军蓝的明暗配色",
+  "type": "module",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "exports": { ".": "./lib/index.js", "./client": "./lib/client.js", "./package.json": "./package.json" },
+  "files": ["lib", "src", "scripts", "tests", "assets", "cordis.patch.yml", "README.md", "LICENSE"],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "inject": ["@deepseek-ai/dsh-client-ui-theme", "@deepseek-ai/dsh-client-ui-settings-general", "@deepseek-ai/dsh-client-locale"]
+    }
+  },
+  "scripts": { "build": "node scripts/build.mjs", "test": "node --test tests/*.test.mjs" }
+}
