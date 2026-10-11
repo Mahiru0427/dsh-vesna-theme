@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const sources=['palette.js','controller.js','art.js','client.js'].map(name => fs.readFileSync(path.join(root,'src',name),'utf8').replace(/^import .*;\r?\n/gm,'').replace(/^export /gm,''));
+const sources=['palette.js','controller.js','art.js','glass.js','client.js'].map(name => fs.readFileSync(path.join(root,'src',name),'utf8').replace(/^import .*;\r?\n/gm,'').replace(/^export /gm,''));
 const css=fs.readFileSync(path.join(root,'src/card.css'),'utf8');
 const assets=Object.fromEntries(['wallpaper','stickers'].map(name=>[name,'data:image/webp;base64,'+fs.readFileSync(path.join(root,'assets',name+'.webp')).toString('base64')]));
 assets.individual=Array.from({length:6},(_,i)=>'data:image/webp;base64,'+fs.readFileSync(path.join(root,'assets',`sticker-${i}.webp`)).toString('base64'));

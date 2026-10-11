@@ -1,5 +1,6 @@
 import { PALETTES, OVERRIDES, ART_OVERRIDES } from './palette.js';
 import { createController, STORAGE_KEY } from './controller.js';
+import { liquidGlassCss, installLiquidGlassOptics } from './glass.js';
 import { artCss, installHeroCopy, installButtonPreviews } from './art.js';
 
 export const inject = ['theme', 'slots', 'locale'];
@@ -82,12 +83,13 @@ export function applyClient(ctx, React, css, assets) {
     // Desktop's Windows frame has an opaque sidebar fill underneath centerCol.
     // Target the CSS-module role observed in both installed layout versions,
     // without coupling to its changing hash or changing native panel geometry.
-    artStyle.textContent=artCss(imageUrl,stickerUrl,individualUrls);
+    artStyle.textContent=artCss(imageUrl,stickerUrl,individualUrls)+liquidGlassCss();
     document.head.appendChild(artStyle);
     const disposePreviews=installButtonPreviews(controller,individualUrls);
+    const disposeGlass=installLiquidGlassOptics();
     sync();
     const unsubscribe=controller.subscribe(sync);
-    return () => {unsubscribe();disposePreviews();artStyle.remove();URL.revokeObjectURL(imageUrl);URL.revokeObjectURL(stickerUrl);individualUrls.forEach(url=>URL.revokeObjectURL(url));if(previous===null)body.removeAttribute('data-vesna-art');else body.setAttribute('data-vesna-art',previous);if(previousStickers===null)body.removeAttribute('data-vesna-stickers');else body.setAttribute('data-vesna-stickers',previousStickers);};
+    return () => {unsubscribe();disposeGlass();disposePreviews();artStyle.remove();URL.revokeObjectURL(imageUrl);URL.revokeObjectURL(stickerUrl);individualUrls.forEach(url=>URL.revokeObjectURL(url));if(previous===null)body.removeAttribute('data-vesna-art');else body.setAttribute('data-vesna-art',previous);if(previousStickers===null)body.removeAttribute('data-vesna-stickers');else body.setAttribute('data-vesna-stickers',previousStickers);};
   });
   ctx.effect(() => ctx.locale.register('settings.vesna', dictionaries));
   ctx.slots.inject('settings.general.item', () => ctx.slots.register({
