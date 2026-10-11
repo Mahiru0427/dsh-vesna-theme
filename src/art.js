@@ -10,9 +10,13 @@ export function artCss(wallpaperUrl, stickersUrl, individualUrls) {
   const canvas = `${role('centerCol')},${role('rightbarCol')}`;
   const newIcon = `button${role('newSession')} ${role('newSessionContent')}`;
   const send = `button${role('primary')}:is([aria-label^="发送"],[aria-label^="Send"])`;
+  const stop = `button${role('primary')}:is([aria-label="停止生成"],[aria-label^="Stop"])`;
   const hello = role('fishHitbox');
   const sticker = index => `background-image:url("${individualUrls[index]}");background-size:contain;background-repeat:no-repeat;background-position:center;pointer-events:none`;
   return `
+body[data-vesna-personal] ${stop}{background:var(--dsw-alias-brand-primary);color:var(--dsw-alias-label-primary-inverted);width:34px;height:34px;min-width:34px;border-radius:50%;border:1px solid var(--dsw-alias-brand-primary);box-shadow:none;box-sizing:border-box;display:grid;place-items:center}
+body[data-vesna-personal] ${stop}>svg{width:16px;height:16px}
+body[data-vesna-personal] ${stop}:hover{background:var(--dsw-alias-button-primary-hover)}
 body[data-vesna-art="dark"]{background-color:#15283B;--vesna-scene:linear-gradient(90deg,rgba(21,40,59,.65),rgba(21,40,59,.61)),url("${wallpaperUrl}");--vesna-glass:rgba(21,40,59,.20)}
 body[data-vesna-art="light"]{background-color:#FAF8F2;--vesna-scene:linear-gradient(90deg,rgba(250,248,242,.80),rgba(250,248,242,.76)),url("${wallpaperUrl}");--vesna-glass:rgba(250,248,242,.32)}
 body[data-vesna-art]{background-image:var(--vesna-scene);background-size:cover;background-position:center;background-attachment:fixed}

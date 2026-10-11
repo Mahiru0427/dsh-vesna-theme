@@ -47,14 +47,14 @@ export function installLiquidGlassOptics() {
   document.body.append(svg);
   const lenses=new Map();let nextLens=0;
   const lensFor=(panel,bounds)=>{
-    const w=bounds.width-4,h=bounds.height-4,dpr=Math.min(2,devicePixelRatio||1),old=lenses.get(panel);
+    const w=bounds.width-4,h=bounds.height-4,dpr=Math.min(1,devicePixelRatio||1),old=lenses.get(panel);
     if(w<=0||h<=0)return;
     if(old?.w===w&&old?.h===h&&old?.dpr===dpr)return;
     old?.filter.remove();
     const filter=document.createElementNS(svg.namespaceURI,'filter');
     const id='vesna-glass-edge-lens-'+(++nextLens);
     filter.id=id;filter.setAttribute('x','0%');filter.setAttribute('y','0%');filter.setAttribute('width','100%');filter.setAttribute('height','100%');filter.setAttribute('color-interpolation-filters','sRGB');
-    const canvas=document.createElement('canvas'),scale=Math.min(dpr,2048/Math.max(w,h));
+    const canvas=document.createElement('canvas'),scale=Math.min(dpr,1024/Math.max(w,h));
     canvas.width=Math.max(1,Math.round(w*scale));canvas.height=Math.max(1,Math.round(h*scale));
     const context=canvas.getContext('2d'),pixels=context.createImageData(canvas.width,canvas.height);
     const edgeCanvas=document.createElement('canvas'),sheenCanvas=document.createElement('canvas');
@@ -147,14 +147,15 @@ export function installLiquidGlassOptics() {
   const prepare=panel=>{
     const bounds=panel.getBoundingClientRect();if(bounds.width===0||bounds.height===0)return;
     if(!previous.has(panel)){
-      for(const [old]of previous){if(!old.isConnected||previous.size>=16)restore(old)}
+      for(const [old]of previous)if(!old.isConnected)restore(old);
+      if(previous.size>=32){const old=[...previous.keys()].find(x=>!visible.has(x)&&x!==active);if(old)restore(old);else return}
       previous.set(panel,['--vesna-glass-x','--vesna-glass-y','--vesna-glass-energy','--vesna-edge-filter','--vesna-edge-mask','--vesna-edge-sheen','--vesna-rim-reflection'].map(key=>[key,panel.style.getPropertyValue(key),panel.style.getPropertyPriority(key)]));
       motion.set(panel,{x:18,y:12,energy:0,targetX:18,targetY:12});
     }
     lensFor(panel,bounds);return bounds;
   };
   const move=event=>{
-    if(reduced.matches||!document.body.hasAttribute('data-vesna-art'))return;
+    if(scrolling||reduced.matches||!document.body.hasAttribute('data-vesna-art'))return;
     const panel=event.target instanceof Element?event.target.closest(selector):null;
     if(!panel){if(active){active=null;animate()}return}
     const bounds=prepare(panel);if(!bounds)return;active=panel;
@@ -163,7 +164,7 @@ export function installLiquidGlassOptics() {
   const leave=()=>{if(active){active=null;animate()}};
   const out=event=>{const next=event.relatedTarget instanceof Element?event.relatedTarget.closest(selector):null;if(active&&next!==active){active=null;animate()}};
   const reduce=()=>{if(reduced.matches){active=null;if(frame)cancelAnimationFrame(frame);frame=0;lastTime=0;for(const [panel,state]of motion){state.x=18;state.y=12;state.energy=0;write(panel,state)}}};
-  document.addEventListener('pointermove',move,{passive:true});document.addEventListener('pointerover',move,{passive:true});document.addEventListener('pointerout',out,{passive:true});document.addEventListener('mouseleave',leave);document.addEventListener('scroll',leave,{passive:true,capture:true});window.addEventListener('blur',leave);reduced.addEventListener('change',reduce);
+  document.addEventListener('pointermove',move,{passive:true});document.addEventListener('pointerover',move,{passive:true});document.addEventListener('pointerout',out,{passive:true});document.addEventListener('mouseleave',leave);document.addEventListener('scroll',onScroll,{passive:true,capture:true});window.addEventListener('blur',leave);reduced.addEventListener('change',reduce);
   // Build visible panels before interaction. Static glass must still refract;
   // observers also keep the optical maps aligned as replies stream or resize.
   const watched=new Set();
@@ -189,9 +190,13 @@ export function installLiquidGlassOptics() {
       assistantMarks.delete(root);restore(root);
     }
   };
-  const visibility=new IntersectionObserver(entries=>{for(const e of entries){if(e.isIntersecting&&document.body.hasAttribute('data-vesna-art'))prepare(e.target);else if(e.target!==active)restore(e.target)}});
-  const resize=new ResizeObserver(entries=>{for(const e of entries)if(previous.has(e.target))prepare(e.target)});
+  const visible=new Set(),pending=new Set();let workTimer=0,scrollTimer=0,scrolling=false;
+  const flush=()=>{workTimer=0;if(disposed||scrolling)return;const panel=pending.values().next().value;if(!panel)return;pending.delete(panel);if(panel.isConnected&&visible.has(panel)&&document.body.hasAttribute('data-vesna-art'))prepare(panel);if(pending.size)workTimer=setTimeout(flush,16)};
+  const schedule=panel=>{pending.add(panel);if(!workTimer&&!scrolling)workTimer=setTimeout(flush,80)};
+  function onScroll(){leave();scrolling=true;clearTimeout(scrollTimer);scrollTimer=setTimeout(()=>{scrolling=false;if(!workTimer&&pending.size)workTimer=setTimeout(flush,0)},120)}
+  const visibility=new IntersectionObserver(entries=>{for(const e of entries){if(e.isIntersecting){visible.add(e.target);schedule(e.target)}else{visible.delete(e.target);pending.delete(e.target)}}},{rootMargin:'100px'});
+  const resize=new ResizeObserver(entries=>{for(const e of entries)if(visible.has(e.target))schedule(e.target)});
   const scan=(records=[])=>{if(records.some(x=>(x.target instanceof Element?x.target:x.target.parentElement)?.closest('style')))styleCount=-1;markAssistants();for(const panel of document.querySelectorAll(selector))if(!watched.has(panel)){watched.add(panel);visibility.observe(panel);resize.observe(panel)}for(const panel of watched)if(!panel.isConnected||!panel.matches(selector)){visibility.unobserve(panel);resize.unobserve(panel);watched.delete(panel);restore(panel)}};
   const mutations=new MutationObserver(scan);mutations.observe(document.documentElement,{childList:true,subtree:true});scan();
-  return ()=>{disposed=true;mutations.disconnect();visibility.disconnect();resize.disconnect();watched.clear();for(const[root,old]of assistantMarks){if(old===null)root.removeAttribute('data-vesna-assistant');else root.setAttribute('data-vesna-assistant',old)}assistantMarks.clear();document.removeEventListener('pointermove',move);document.removeEventListener('pointerover',move);document.removeEventListener('pointerout',out);document.removeEventListener('mouseleave',leave);document.removeEventListener('scroll',leave,{capture:true});window.removeEventListener('blur',leave);reduced.removeEventListener('change',reduce);if(frame)cancelAnimationFrame(frame);for(const [panel]of previous)restore(panel);active=null;motion.clear();lenses.clear();svg.remove()};
+  return ()=>{disposed=true;clearTimeout(workTimer);clearTimeout(scrollTimer);pending.clear();visible.clear();mutations.disconnect();visibility.disconnect();resize.disconnect();watched.clear();for(const[root,old]of assistantMarks){if(old===null)root.removeAttribute('data-vesna-assistant');else root.setAttribute('data-vesna-assistant',old)}assistantMarks.clear();document.removeEventListener('pointermove',move);document.removeEventListener('pointerover',move);document.removeEventListener('pointerout',out);document.removeEventListener('mouseleave',leave);document.removeEventListener('scroll',onScroll,{capture:true});window.removeEventListener('blur',leave);reduced.removeEventListener('change',reduce);if(frame)cancelAnimationFrame(frame);for(const [panel]of previous)restore(panel);active=null;motion.clear();lenses.clear();svg.remove()};
 }
