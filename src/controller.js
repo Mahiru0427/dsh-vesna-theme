@@ -9,6 +9,7 @@ export function createController(theme, storage, overrides, artOverrides = overr
   let enabled = true;
   let wallpaper = true;
   let stickers = true;
+  let material = 'liquid';
   let storageState = 'saved';
   let readOnly = false;
   function read() {
@@ -24,20 +25,21 @@ export function createController(theme, storage, overrides, artOverrides = overr
       enabled = data.enabled;
       wallpaper = typeof data.wallpaper === 'boolean' ? data.wallpaper : true;
       stickers = typeof data.stickers === 'boolean' ? data.stickers : true;
+      material = data.material === 'gaussian' ? 'gaussian' : 'liquid';
     } catch { storageState = 'unavailable'; }
   }
   function persist() {
     if (readOnly) return;
     try {
       if (!storage) throw new Error('storage unavailable');
-      storage.setItem(STORAGE_KEY, JSON.stringify({ version:1, enabled, wallpaper, stickers }));
+      storage.setItem(STORAGE_KEY, JSON.stringify({ version:1, enabled, wallpaper, stickers, material }));
       storageState = 'saved';
     } catch { storageState = 'unavailable'; }
   }
   function publish() {
     if (disposed) return;
     const active = theme.getTheme();
-    snapshot = Object.freeze({ enabled, wallpaper, stickers, storageState, preference:active.preference, scheme:active.active.colorScheme });
+    snapshot = Object.freeze({ enabled, wallpaper, stickers, material, storageState, preference:active.preference, scheme:active.active.colorScheme });
     for (const listener of listeners) listener();
   }
   function reconcile() {
@@ -53,7 +55,7 @@ export function createController(theme, storage, overrides, artOverrides = overr
     syncTheme: publish,
     syncStorage() {
       if (disposed) return;
-      enabled = true; wallpaper = true; stickers = true; readOnly = false; storageState = 'saved';
+      enabled = true; wallpaper = true; stickers = true; material = 'liquid'; readOnly = false; storageState = 'saved';
       read(); reconcile();
     },
     choose(mode) {
@@ -70,6 +72,11 @@ export function createController(theme, storage, overrides, artOverrides = overr
       if (name === 'wallpaper') wallpaper = value;
       else stickers = value;
       persist(); reconcile();
+    },
+    setMaterial(value) {
+      if(disposed)return;
+      if(!['liquid','gaussian'].includes(value))throw new Error('Invalid message material');
+      material=value;persist();publish();
     },
     dispose() {
       if (disposed) return;

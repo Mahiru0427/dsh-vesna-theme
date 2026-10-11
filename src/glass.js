@@ -200,3 +200,31 @@ export function installLiquidGlassOptics() {
   const mutations=new MutationObserver(scan);mutations.observe(document.documentElement,{childList:true,subtree:true});scan();
   return ()=>{disposed=true;clearTimeout(workTimer);clearTimeout(scrollTimer);pending.clear();visible.clear();mutations.disconnect();visibility.disconnect();resize.disconnect();watched.clear();for(const[root,old]of assistantMarks){if(old===null)root.removeAttribute('data-vesna-assistant');else root.setAttribute('data-vesna-assistant',old)}assistantMarks.clear();document.removeEventListener('pointermove',move);document.removeEventListener('pointerover',move);document.removeEventListener('pointerout',out);document.removeEventListener('mouseleave',leave);document.removeEventListener('scroll',onScroll,{capture:true});window.removeEventListener('blur',leave);reduced.removeEventListener('change',reduce);if(frame)cancelAnimationFrame(frame);for(const [panel]of previous)restore(panel);active=null;motion.clear();lenses.clear();svg.remove()};
 }
+
+// Static Gaussian material: no canvas, SVG displacement or pointer animation.
+export function gaussianGlassCss(){
+ const panels=':is(.v5IAXa_root,.kshsua_root,[data-vesna-assistant],[class$="_userRow"] [class$="_bubble"],[class*="_userRow "] [class*="_bubble "])';
+ return `body[data-vesna-material="gaussian"][data-vesna-art] ${panels}{position:relative;box-sizing:border-box;max-width:100%;min-width:0;padding:18px 22px;border:1px solid rgba(186,228,233,.32);border-radius:24px;background:rgba(21,40,59,.12);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);box-shadow:0 3px 12px rgba(7,25,40,.06);overflow-wrap:anywhere;color:#f3f8fc;text-shadow:0 1px 2px rgba(0,0,0,.22)}
+ body[data-vesna-material="gaussian"][data-vesna-art="light"] ${panels}{background:rgba(250,248,242,.16);border-color:rgba(54,103,117,.28);color:#173447;text-shadow:none}
+ body[data-vesna-material="gaussian"][data-vesna-art] ${panels}::before,body[data-vesna-material="gaussian"][data-vesna-art] ${panels}::after{content:none}
+ body[data-vesna-material="gaussian"][data-vesna-art] ${panels} .md-table-wide{width:100%;max-width:100%;margin-left:0;padding-left:0;overflow-x:auto}
+ body[data-vesna-material="gaussian"][data-vesna-art] ${panels} pre{max-width:100%;overflow-x:auto}
+ @media(prefers-reduced-transparency:reduce){body[data-vesna-material="gaussian"][data-vesna-art] ${panels}{background:#122d40;backdrop-filter:none}body[data-vesna-material="gaussian"][data-vesna-art="light"] ${panels}{background:#f4faf8}}
+ @media(max-width:700px){body[data-vesna-material="gaussian"][data-vesna-art] ${panels}{padding:14px 16px}}`;
+}
+// Only discover the host reply renderer; no scroll or mouse listeners.
+export function installGaussianMessageMarkers(){
+ const marks=new Map();let timer=0,disposed=false;
+ const scan=()=>{timer=0;if(disposed)return;const prefixes=new Set();for(const s of document.querySelectorAll('style'))for(const m of s.textContent.matchAll(/\.([\w-]+)_body\s+\.md-table-wide\s*\{/g))prefixes.add(m[1]);
+ for(const prefix of prefixes)for(const root of document.querySelectorAll('.'+CSS.escape(prefix+'_root'))){if(![...root.children].some(x=>x.classList.contains(prefix+'_body')))continue;if(!marks.has(root))marks.set(root,root.getAttribute('data-vesna-assistant'));root.setAttribute('data-vesna-assistant','true')}
+ for(const[root]of marks)if(!root.isConnected)marks.delete(root);
+ };
+ const observer=new MutationObserver(()=>{if(!timer)timer=setTimeout(scan,100)});observer.observe(document.documentElement,{childList:true,subtree:true});scan();
+ return()=>{disposed=true;clearTimeout(timer);observer.disconnect();for(const[root,old]of marks){if(old===null)root.removeAttribute('data-vesna-assistant');else root.setAttribute('data-vesna-assistant',old)}marks.clear()};
+}
+
+// Tear down the entire optical engine when Gaussian mode is selected.
+export function createMessageMaterialManager(){
+ const body=document.body,previous=body.getAttribute('data-vesna-material');let mode=null,disposeEngine=null;
+ return{sync(state){const next=state.enabled&&state.wallpaper?state.material:null;if(next===mode)return;disposeEngine?.();disposeEngine=null;mode=next;if(next){body.setAttribute('data-vesna-material',next);disposeEngine=next==='gaussian'?installGaussianMessageMarkers():installLiquidGlassOptics()}else body.removeAttribute('data-vesna-material')},dispose(){disposeEngine?.();disposeEngine=null;mode=null;if(previous===null)body.removeAttribute('data-vesna-material');else body.setAttribute('data-vesna-material',previous)}};
+}

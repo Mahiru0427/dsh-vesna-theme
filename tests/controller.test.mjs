@@ -37,7 +37,7 @@ test('storage write failures keep the current choice usable and report the limit
 });
 test('malformed boolean is not treated as enabled and can be repaired by choosing',()=>{
   const f=fixture('{"version":1,"enabled":"false"}');const c=createController(f.theme,f.storage,OVERRIDES);
-  assert.equal(c.getSnapshot().enabled,false);c.choose('system');assert.deepEqual(JSON.parse(f.data.get(STORAGE_KEY)),{version:1,enabled:true,wallpaper:true,stickers:true});
+  assert.equal(c.getSnapshot().enabled,false);c.choose('system');assert.deepEqual(JSON.parse(f.data.get(STORAGE_KEY)),{version:1,enabled:true,wallpaper:true,stickers:true,material:'liquid'});
 });
 test('corrupted JSON restores default colors until the user chooses again',()=>{
   const f=fixture('{broken');const c=createController(f.theme,f.storage,OVERRIDES);
@@ -68,3 +68,5 @@ test('semantic danger/success/warning/diff colors are not reclassified',()=>{
   assert.ok(Object.keys(OVERRIDES).length>50);
   for(const name of Object.keys(OVERRIDES))assert.doesNotMatch(name,/state-(error|warn|success)|diff-(added|deleted)/);
 });
+
+test('message material migrates, persists and syncs between windows',()=>{const f=fixture(JSON.stringify({version:1,enabled:true}));const c=createController(f.theme,f.storage,OVERRIDES);assert.equal(c.getSnapshot().material,'liquid');c.setMaterial('gaussian');assert.equal(JSON.parse(f.data.get(STORAGE_KEY)).material,'gaussian');const next=createController(f.theme,f.storage,OVERRIDES);assert.equal(next.getSnapshot().material,'gaussian');c.setMaterial('liquid');next.syncStorage();assert.equal(next.getSnapshot().material,'liquid');assert.throws(()=>c.setMaterial('bad'));c.dispose();c.setMaterial('gaussian');assert.equal(JSON.parse(f.data.get(STORAGE_KEY)).material,'liquid');next.dispose()});
