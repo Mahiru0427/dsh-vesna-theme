@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Mahiru0427/dsh-vesna-theme.git"
+    "url": "git+https://github.com/Mahiru0427/dsh-vesna-theme.git"
   },
   "homepage": "https://github.com/Mahiru0427/dsh-vesna-theme#readme",
   "main": "lib/index.js",
@@ -41,6 +41,17 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "theme",
+    "vesna"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }
