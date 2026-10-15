@@ -1,7 +1,7 @@
 import { PALETTES, OVERRIDES, ART_OVERRIDES } from './palette.js';
 import { createController, STORAGE_KEY } from './controller.js';
 import { liquidGlassCss, gaussianGlassCss, createMessageMaterialManager } from './glass.js';
-import { artCss, installHeroCopy, installButtonPreviews } from './art.js';
+import { artCss, installHeroCopy, installButtonPreviews, installFooterAlignment, joinedMaterialCss } from './art.js';
 
 export const inject = ['theme', 'slots', 'locale'];
 export const dictionaries = {
@@ -52,6 +52,7 @@ export function applyClient(ctx, React, css, assets) {
   });
   ctx.on('theme/change', () => controller.syncTheme());
   ctx.effect(() => installHeroCopy(controller));
+  ctx.effect(() => installFooterAlignment());
   ctx.effect(() => {
     const onStorage = event => { if (storage && event.storageArea === storage && (event.key === STORAGE_KEY || event.key === null)) controller.syncStorage(); };
     window.addEventListener('storage', onStorage);
@@ -87,7 +88,7 @@ export function applyClient(ctx, React, css, assets) {
     // Desktop's Windows frame has an opaque sidebar fill underneath centerCol.
     // Target the CSS-module role observed in both installed layout versions,
     // without coupling to its changing hash or changing native panel geometry.
-    artStyle.textContent=artCss(imageUrl,stickerUrl,individualUrls)+liquidGlassCss()+gaussianGlassCss();
+    artStyle.textContent=artCss(imageUrl,stickerUrl,individualUrls)+joinedMaterialCss()+liquidGlassCss()+gaussianGlassCss();
     document.head.appendChild(artStyle);
     const disposePreviews=installButtonPreviews(controller,individualUrls);
     sync();

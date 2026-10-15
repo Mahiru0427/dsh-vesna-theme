@@ -1,4 +1,10 @@
-# 薇斯纳主题 · 下拉列表显示修复（0.3.4）
+# 薇斯纳主题 · 无边框壁纸与底栏圆角（0.3.5）
+
+## v0.3.5 更新
+
+- 更换为无边框壁纸，去掉穿过顶部标题的装饰横线。
+- 底部状态栏加入与左侧栏一致的模糊背景。
+- 优化左栏与底栏的衔接，改为平滑内圆角，减少接缝色差。
 
 ## v0.3.4 更新
 
@@ -31,7 +37,7 @@
 
 完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
 
-为 DeepSeek Harness Desktop 制作的独立主题插件。采用用户认可的双手托脸、微瘦脸、金线花框壁纸，以及六款卡通表情。浅色使用奶白遮罩，深色使用海军蓝遮罩；图片不需要联网加载。
+为 DeepSeek Harness Desktop 制作的独立主题插件。采用用户认可的双手托脸、微瘦脸、无边框壁纸，以及六款卡通表情。浅色使用奶白遮罩，深色使用海军蓝遮罩；图片不需要联网加载。
 
 ## 使用范围
 
@@ -46,7 +52,7 @@
 
 已在本机正在运行的 Desktop **0.2.0-rc.2** 中实际安装并启用。已生成 `lib/client.js`，无需自己编译。
 
-1. 从本仓库的 **Releases** 下载 `dsh-vesna-theme-0.3.4.tgz`。
+1. 从本仓库的 **Releases** 下载 `dsh-vesna-theme-0.3.5.tgz`。
 2. 打开 **DeepSeek Harness Desktop → 插件 → 添加插件**，选择下载的安装包。
 3. 安装后点击「立即启用」。
 4. 到 **设置 → 通用设置 → 薇斯纳主题** 选择配色、壁纸和表情开关。
@@ -135,6 +141,9 @@ v0.3.3 验证：14项逻辑测试通过；真实 React 与 ThemeRuntime 组件�
 
 本仓库已添加 `dsh-plugin` GitHub Topic，支持按该 Topic 搜索的社区市场发现。各市场的索引刷新和兼容性筛选不同，添加标签不代表官方认证或已被所有市场收录。
 
-目前正式安装包在 GitHub Releases。npm 发布配置已准备好，但尚未发布到 npm；请以 Releases 为准。
+正式安装包在 GitHub Releases；npm 已公开发布，可按包名 `dsh-vesna-theme` 安装。最新 npm 版本请以 registry 查询结果为准。
 
 维护者发布 npm：登录自己的 npm 账号后，在仓库目录执行 `npm publish --access public --registry https://registry.npmjs.org`。发布前会重新构建并运行逻辑测试。
+
+
+v0.3.5 验证：无框 PNG 到 WebP 为逐像素一致的无损转换；底栏随输入框增高更新边界，卸载清理还原样式。14 项逻辑测试和真实 React/ThemeRuntime 浏览器回归通过。圆角为网页近似外观，macOS 实机体验仍待用户确认。

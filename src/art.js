@@ -14,6 +14,9 @@ export function artCss(wallpaperUrl, stickersUrl, individualUrls) {
   const hello = role('fishHitbox');
   const sticker = index => `background-image:url("${individualUrls[index]}");background-size:contain;background-repeat:no-repeat;background-position:center;pointer-events:none`;
   return `
+body[data-vesna-art] :is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "])){isolation:isolate;background:none}
+body[data-vesna-art] :is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "]))::before{content:"";position:absolute;left:0;right:0;bottom:0;top:var(--vesna-footer-top,calc(100% - 28px));z-index:-1;pointer-events:none;background:var(--vesna-glass);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+@media(prefers-reduced-transparency:reduce){body[data-vesna-art] :is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "]))::before{background:var(--dsw-alias-bg-module-platform);backdrop-filter:none}}
 body[data-vesna-personal] ${stop}{background:var(--dsw-alias-brand-primary);color:var(--dsw-alias-label-primary-inverted);width:34px;height:34px;min-width:34px;border-radius:50%;border:1px solid var(--dsw-alias-brand-primary);box-shadow:none;box-sizing:border-box;display:grid;place-items:center}
 body[data-vesna-personal] ${stop}>svg{width:16px;height:16px}
 body[data-vesna-personal] ${stop}:hover{background:var(--dsw-alias-button-primary-hover)}
@@ -142,3 +145,28 @@ export function installHeroCopy(controller) {
   };
 }
 
+
+// Align the footer backing to the real input-card bottom as its height changes.
+export function installFooterAlignment(){
+ const selector=role('composerSeat')+':not('+role('composerHero')+')';
+ const entries=new Map();let timer=0,disposed=false;
+ const update=seat=>{const entry=entries.get(seat);if(!entry)return;const a=seat.getBoundingClientRect(),b=entry.card.getBoundingClientRect();if(a.height>0&&b.height>0)seat.style.setProperty('--vesna-footer-top',Math.max(0,b.bottom-a.top)+'px')};
+ const release=seat=>{const e=entries.get(seat);if(!e)return;resize.unobserve(seat);resize.unobserve(e.card);if(e.old)seat.style.setProperty('--vesna-footer-top',e.old,e.priority);else seat.style.removeProperty('--vesna-footer-top');entries.delete(seat)};
+ const resize=new ResizeObserver(()=>{for(const seat of entries.keys())update(seat)});
+ const scan=()=>{timer=0;if(disposed)return;for(const seat of document.querySelectorAll(selector)){const card=[...seat.querySelectorAll(role('card'))].find(x=>x.querySelector(role('input')));if(!card)continue;if(entries.get(seat)?.card!==card){release(seat);entries.set(seat,{card,old:seat.style.getPropertyValue('--vesna-footer-top'),priority:seat.style.getPropertyPriority('--vesna-footer-top')});resize.observe(seat);resize.observe(card)}update(seat)}for(const seat of entries.keys())if(!seat.isConnected||!seat.matches(selector))release(seat)};
+ const mutations=new MutationObserver(()=>{if(!timer)timer=setTimeout(scan,80)});mutations.observe(document.body,{childList:true,subtree:true});scan();return()=>{disposed=true;clearTimeout(timer);mutations.disconnect();for(const seat of [...entries.keys()])release(seat);resize.disconnect()};
+}
+
+// Both surfaces sample a fixed wallpaper plane, so the corner has no material seam.
+export function joinedMaterialCss(){return `body[data-vesna-art] :is(:is([class$="_sidebarCol"],[class*="_sidebarCol "]),:is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "])))::before{background-color:transparent;background-image:linear-gradient(var(--vesna-glass),var(--vesna-glass)),var(--vesna-scene);background-size:cover;background-position:center;background-attachment:fixed;backdrop-filter:none;-webkit-backdrop-filter:none;filter:blur(8px);clip-path:inset(16px)}
+body[data-vesna-art] :is([class$="_sidebarCol"],[class*="_sidebarCol "])::before{inset:-16px}
+body[data-vesna-art] :is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "]))::before{left:-16px;right:-16px;bottom:-16px;top:calc(var(--vesna-footer-top,calc(100% - 28px)) - 16px)}
+@media(prefers-reduced-transparency:reduce){body[data-vesna-art] :is(:is([class$="_sidebarCol"],[class*="_sidebarCol "]),:is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "])))::before{filter:none;background-image:none;background-color:var(--dsw-alias-bg-module-platform)}}
+
+@media(max-width:600px){body[data-vesna-art] :is([class$="_sidebarCol"],[class$="_composerSeat"])::before{background-position:70% center}}
+
+/* Rounded inside corner between the left rail and the footer. */
+body[data-vesna-art] :is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "]))::after{content:"";position:absolute;left:-16px;top:calc(var(--vesna-footer-top,calc(100% - 28px)) - 40px);width:56px;height:56px;z-index:-1;pointer-events:none;background-image:linear-gradient(var(--vesna-glass),var(--vesna-glass)),var(--vesna-scene);background-size:cover;background-position:center;background-attachment:fixed;filter:blur(8px);clip-path:inset(16px);mask-image:radial-gradient(circle 24px at 40px 16px,transparent 23.5px,#000 24.5px);-webkit-mask-image:radial-gradient(circle 24px at 40px 16px,transparent 23.5px,#000 24.5px)}
+@media(max-width:600px){body[data-vesna-art] :is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "]))::after{background-position:70% center}}
+@media(prefers-reduced-transparency:reduce){body[data-vesna-art] :is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "]))::after{background-image:none;background-color:var(--dsw-alias-bg-module-platform);filter:none}}
+`;}
