@@ -165,8 +165,4 @@ body[data-vesna-art] :is([class$="_composerSeat"],[class*="_composerSeat "]):not
 
 @media(max-width:600px){body[data-vesna-art] :is([class$="_sidebarCol"],[class$="_composerSeat"])::before{background-position:70% center}}
 
-/* Rounded inside corner between the left rail and the footer. */
-body[data-vesna-art] :is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "]))::after{content:"";position:absolute;left:-16px;top:calc(var(--vesna-footer-top,calc(100% - 28px)) - 40px);width:56px;height:56px;z-index:-1;pointer-events:none;background-image:linear-gradient(var(--vesna-glass),var(--vesna-glass)),var(--vesna-scene);background-size:cover;background-position:center;background-attachment:fixed;filter:blur(8px);clip-path:inset(16px);mask-image:radial-gradient(circle 24px at 40px 16px,transparent 23.5px,#000 24.5px);-webkit-mask-image:radial-gradient(circle 24px at 40px 16px,transparent 23.5px,#000 24.5px)}
-@media(max-width:600px){body[data-vesna-art] :is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "]))::after{background-position:70% center}}
-@media(prefers-reduced-transparency:reduce){body[data-vesna-art] :is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "]))::after{background-image:none;background-color:var(--dsw-alias-bg-module-platform);filter:none}}
 `;}
