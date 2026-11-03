@@ -4,6 +4,8 @@ function role(name) {
   return `:is([class$="_${name}"],[class*="_${name} "])`;
 }
 
+const activeFooter = `:is(${role('root')}[data-phase=active],${role('embeddedBody')}[data-content-phase=active]) ${role('composerSeat')}[data-vesna-footer]:not(${role('composerHero')}):not(:has(${role('composerHero')}))`;
+
 export function artCss(wallpaperUrl, stickersUrl, individualUrls) {
   // Conversation viewports also have a "frame" role: only the shell owns art.
   const sidebar = role('sidebarCol'), frame = `${role('frame')}:has(> ${sidebar})`;
@@ -14,9 +16,9 @@ export function artCss(wallpaperUrl, stickersUrl, individualUrls) {
   const hello = role('fishHitbox');
   const sticker = index => `background-image:url("${individualUrls[index]}");background-size:contain;background-repeat:no-repeat;background-position:center;pointer-events:none`;
   return `
-body[data-vesna-art] :is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "])){isolation:isolate;background:none}
-body[data-vesna-art] :is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "]))::before{content:"";position:absolute;left:0;right:0;bottom:0;top:var(--vesna-footer-top,calc(100% - 28px));z-index:-1;pointer-events:none;background:var(--vesna-glass);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-@media(prefers-reduced-transparency:reduce){body[data-vesna-art] :is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "]))::before{background:var(--dsw-alias-bg-module-platform);backdrop-filter:none}}
+body[data-vesna-art] ${activeFooter}{isolation:isolate;background:none}
+body[data-vesna-art] ${activeFooter}::before{content:"";position:absolute;left:0;right:0;bottom:0;top:var(--vesna-footer-top);z-index:-1;pointer-events:none;background:var(--vesna-glass);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+@media(prefers-reduced-transparency:reduce){body[data-vesna-art] ${activeFooter}::before{background:var(--dsw-alias-bg-module-platform);backdrop-filter:none}}
 body[data-vesna-personal] ${stop}{background:var(--dsw-alias-brand-primary);color:var(--dsw-alias-label-primary-inverted);width:34px;height:34px;min-width:34px;border-radius:50%;border:1px solid var(--dsw-alias-brand-primary);box-shadow:none;box-sizing:border-box;display:grid;place-items:center}
 body[data-vesna-personal] ${stop}>svg{width:16px;height:16px}
 body[data-vesna-personal] ${stop}:hover{background:var(--dsw-alias-button-primary-hover)}
@@ -42,7 +44,9 @@ body[data-vesna-personal] ${role('titleGroup')}:has(> ${role('previewBadge')}){j
 body[data-vesna-personal] ${role('titleGroup')}>${role('previewBadge')}{display:none}
 body[data-vesna-personal] ${role('stack')}:has(>${role('headline')}){margin-right:auto;max-width:min(620px,100%);gap:18px}
 body[data-vesna-personal] ${role('root')}:has(> ${role('stack')}){padding-left:clamp(24px,4vw,56px);padding-right:24px}
-body[data-vesna-personal] ${role('composerStack')}${role('composerHero')}{width:38%;min-width:min(360px,calc(100% - 48px));max-width:calc(100% - 48px);align-self:flex-start;margin-left:clamp(24px,3vw,56px);container-type:inline-size}
+body[data-vesna-personal] ${role('composerStack')}${role('composerHero')}{--vesna-hero-wide:min(calc(100% - 48px),var(--dsh-composer-card-max-width,920px));width:38%;min-width:min(360px,calc(100% - 48px));max-width:calc(100% - 48px);align-self:flex-start;margin-left:clamp(24px,3vw,56px);container-type:inline-size;transition:width 380ms cubic-bezier(.22,1,.36,1),margin-left 380ms cubic-bezier(.22,1,.36,1)}
+body[data-vesna-personal] ${role("composerStack")}${role("composerHero")}[data-vesna-draft]{width:var(--vesna-hero-wide);margin-left:max(0px,calc((100% - var(--vesna-hero-wide)) / 2))}
+@media(prefers-reduced-motion:reduce){body[data-vesna-personal] ${role("composerStack")}${role("composerHero")}{transition:none}}
 body[data-vesna-personal] ${role('composerHero')} ${role('card')}:has(${role('input')}){width:100%;max-width:none;box-sizing:border-box}
 body[data-vesna-personal] ${role('composerHero')} ${role('input')}{min-height:clamp(52px,10cqw,160px)}
 body[data-vesna-personal] ${role('composerHero')} ${role('root')}:has(> ${role('stack')}){width:100%;box-sizing:border-box;padding:0}
@@ -148,21 +152,53 @@ export function installHeroCopy(controller) {
 
 // Align the footer backing to the real input-card bottom as its height changes.
 export function installFooterAlignment(){
- const selector=role('composerSeat')+':not('+role('composerHero')+')';
+ const selector=role('composerSeat');
+ const scope=role('root')+'[data-phase],'+role('embeddedBody')+'[data-content-phase]';
  const entries=new Map();let timer=0,disposed=false;
- const update=seat=>{const entry=entries.get(seat);if(!entry)return;const a=seat.getBoundingClientRect(),b=entry.card.getBoundingClientRect();if(a.height>0&&b.height>0)seat.style.setProperty('--vesna-footer-top',Math.max(0,b.bottom-a.top)+'px')};
- const release=seat=>{const e=entries.get(seat);if(!e)return;resize.unobserve(seat);resize.unobserve(e.card);if(e.old)seat.style.setProperty('--vesna-footer-top',e.old,e.priority);else seat.style.removeProperty('--vesna-footer-top');entries.delete(seat)};
+ const update=seat=>{const entry=entries.get(seat);if(!entry)return;const a=seat.getBoundingClientRect(),b=entry.card.getBoundingClientRect();const gap=(a.bottom-b.bottom)*seat.offsetHeight/a.height;if(!a.height||!b.height||gap<1||gap>48){seat.removeAttribute('data-vesna-footer');return}seat.setAttribute('data-vesna-footer','');seat.style.setProperty('--vesna-footer-top',(seat.offsetHeight-gap)+'px')};
+ const release=seat=>{const e=entries.get(seat);if(!e)return;resize.unobserve(seat);resize.unobserve(e.card);if(e.old)seat.style.setProperty('--vesna-footer-top',e.old,e.priority);else seat.style.removeProperty('--vesna-footer-top');entries.delete(seat);seat.removeAttribute('data-vesna-footer')};
  const resize=new ResizeObserver(()=>{for(const seat of entries.keys())update(seat)});
- const scan=()=>{timer=0;if(disposed)return;for(const seat of document.querySelectorAll(selector)){const card=[...seat.querySelectorAll(role('card'))].find(x=>x.querySelector(role('input')));if(!card)continue;if(entries.get(seat)?.card!==card){release(seat);entries.set(seat,{card,old:seat.style.getPropertyValue('--vesna-footer-top'),priority:seat.style.getPropertyPriority('--vesna-footer-top')});resize.observe(seat);resize.observe(card)}update(seat)}for(const seat of entries.keys())if(!seat.isConnected||!seat.matches(selector))release(seat)};
- const mutations=new MutationObserver(()=>{if(!timer)timer=setTimeout(scan,80)});mutations.observe(document.body,{childList:true,subtree:true});scan();return()=>{disposed=true;clearTimeout(timer);mutations.disconnect();for(const seat of [...entries.keys()])release(seat);resize.disconnect()};
+ const scan=()=>{timer=0;if(disposed)return;const current=new Set();for(const seat of document.querySelectorAll(selector)){const host=seat.closest(scope);if((host?.dataset.phase??host?.dataset.contentPhase)!=='active'||seat.matches(role('composerHero'))||seat.querySelector(role('composerHero')))continue;const card=[...seat.querySelectorAll(role('card'))].find(x=>x.querySelector(role('input')));if(!card)continue;current.add(seat);if(entries.get(seat)?.card!==card){release(seat);entries.set(seat,{card,old:seat.style.getPropertyValue('--vesna-footer-top'),priority:seat.style.getPropertyPriority('--vesna-footer-top')});resize.observe(seat);resize.observe(card)}update(seat)}for(const seat of entries.keys())if(!current.has(seat))release(seat)};
+ const mutations=new MutationObserver(()=>{if(!timer)timer=setTimeout(scan,80)});mutations.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['data-phase','data-content-phase']});scan();return()=>{disposed=true;clearTimeout(timer);mutations.disconnect();for(const seat of [...entries.keys()])release(seat);resize.disconnect()};
 }
 
 // Both surfaces sample a fixed wallpaper plane, so the corner has no material seam.
-export function joinedMaterialCss(){return `body[data-vesna-art] :is(:is([class$="_sidebarCol"],[class*="_sidebarCol "]),:is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "])))::before{background-color:transparent;background-image:linear-gradient(var(--vesna-glass),var(--vesna-glass)),var(--vesna-scene);background-size:cover;background-position:center;background-attachment:fixed;backdrop-filter:none;-webkit-backdrop-filter:none;filter:blur(8px);clip-path:inset(16px)}
+export function joinedMaterialCss(){return `body[data-vesna-art] :is(:is([class$="_sidebarCol"],[class*="_sidebarCol "]),${activeFooter})::before{background-color:transparent;background-image:linear-gradient(var(--vesna-glass),var(--vesna-glass)),var(--vesna-scene);background-size:cover;background-position:center;background-attachment:fixed;backdrop-filter:none;-webkit-backdrop-filter:none;filter:blur(8px);clip-path:inset(16px)}
 body[data-vesna-art] :is([class$="_sidebarCol"],[class*="_sidebarCol "])::before{inset:-16px}
-body[data-vesna-art] :is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "]))::before{left:-16px;right:-16px;bottom:-16px;top:calc(var(--vesna-footer-top,calc(100% - 28px)) - 16px)}
-@media(prefers-reduced-transparency:reduce){body[data-vesna-art] :is(:is([class$="_sidebarCol"],[class*="_sidebarCol "]),:is([class$="_composerSeat"],[class*="_composerSeat "]):not(:is([class$="_composerHero"],[class*="_composerHero "])))::before{filter:none;background-image:none;background-color:var(--dsw-alias-bg-module-platform)}}
+body[data-vesna-art] ${activeFooter}::before{left:-16px;right:-16px;bottom:-16px;top:calc(var(--vesna-footer-top) - 16px)}
+@media(prefers-reduced-transparency:reduce){body[data-vesna-art] :is(:is([class$="_sidebarCol"],[class*="_sidebarCol "]),${activeFooter})::before{filter:none;background-image:none;background-color:var(--dsw-alias-bg-module-platform)}}
 
-@media(max-width:600px){body[data-vesna-art] :is([class$="_sidebarCol"],[class$="_composerSeat"])::before{background-position:70% center}}
+@media(max-width:600px){body[data-vesna-art] :is([class$="_sidebarCol"],${activeFooter})::before{background-position:70% center}}
 
 `;}
+
+export function installHeroDraftExpansion(){
+ const hero=role('composerStack')+role('composerHero');
+ const editors='[contenteditable="true"],textarea';
+ const tracked=new Set(),composing=new WeakSet();
+ let frame=0;
+ const sync=()=>{
+  frame=0;
+  for(const el of tracked)if(!el.isConnected||!el.matches(hero)){el.removeAttribute('data-vesna-draft');tracked.delete(el)}
+  for(const el of document.querySelectorAll(hero)){
+   tracked.add(el);
+   const editor=el.querySelector(role('input')+':is('+editors+')')??el.querySelector(role('input')+' :is('+editors+')');
+   const text=editor?.value??editor?.textContent??'';
+   const filled=!!text.replace(/[\u200B-\u200D\uFEFF]/g,'').trim();
+   if(filled||!editor||!composing.has(editor))el.toggleAttribute('data-vesna-draft',filled);
+  }
+ };
+ const schedule=()=>{if(!frame)frame=requestAnimationFrame(sync)};
+ const input=e=>{if(e.target instanceof Element&&e.target.closest(hero))schedule()};
+ const start=e=>{if(e.target instanceof Element)composing.add(e.target);input(e)};
+ const end=e=>{composing.delete(e.target);input(e)};
+ const observer=new MutationObserver(records=>{
+  if(records.some(r=>{const t=r.target instanceof Element?r.target:r.target.parentElement;return t?.closest(hero)||[...r.addedNodes,...r.removedNodes].some(n=>n instanceof Element&&(n.matches(hero)||n.querySelector(hero)))}))schedule();
+ });
+ observer.observe(document.body,{childList:true,subtree:true,characterData:true});
+ document.addEventListener('input',input,true);
+ document.addEventListener('compositionstart',start,true);
+ document.addEventListener('compositionend',end,true);
+ sync();
+ return()=>{observer.disconnect();cancelAnimationFrame(frame);document.removeEventListener('input',input,true);document.removeEventListener('compositionstart',start,true);document.removeEventListener('compositionend',end,true);for(const el of tracked)el.removeAttribute('data-vesna-draft')};
+}
